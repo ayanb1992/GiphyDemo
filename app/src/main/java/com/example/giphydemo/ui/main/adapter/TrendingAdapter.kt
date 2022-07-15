@@ -23,10 +23,24 @@ import com.example.giphydemo.model.GifData
 class TrendingAdapter(private val context: Context, private var data: List<GifData>) :
     RecyclerView.Adapter<TrendingAdapter.ViewHolder>() {
 
+    interface OnFavoriteClickListener {
+        fun onFavoriteClicked(gifData: GifData)
+    }
+
+    private var onFavoriteClickListener: OnFavoriteClickListener? = null
+
+    fun setOnFavoriteClickListener(onFavoriteClickListener: OnFavoriteClickListener) {
+        this.onFavoriteClickListener = onFavoriteClickListener
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     fun setGifData(data: List<GifData>) {
         this.data = data
         notifyDataSetChanged()
+    }
+
+    fun getGifData(): List<GifData> {
+        return data
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, position: Int): ViewHolder {
@@ -43,6 +57,10 @@ class TrendingAdapter(private val context: Context, private var data: List<GifDa
             .transition(DrawableTransitionOptions.withCrossFade())
             .listener(getGlideRequestListener(position, viewHolder))
             .into(viewHolder.gifView)
+
+        viewHolder.markFavoriteBtn.setOnClickListener {
+            if(!data[position].isFavorite) onFavoriteClickListener?.onFavoriteClicked(data[position])
+        }
     }
 
     private fun getGlideRequestListener(
@@ -71,7 +89,7 @@ class TrendingAdapter(private val context: Context, private var data: List<GifDa
                 return false
             }
 
-        })
+        }
     }
 
     private fun setFavoriteIcon(favorite: Boolean, viewHolder: ViewHolder) {

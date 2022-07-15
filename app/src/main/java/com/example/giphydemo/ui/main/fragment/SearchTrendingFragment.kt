@@ -9,13 +9,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.giphydemo.databinding.FragmentSearchTrendingBinding
+import com.example.giphydemo.model.GifData
 import com.example.giphydemo.ui.main.adapter.TrendingAdapter
 import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.util.hideSoftKeyboard
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
 
-class SearchTrendingFragment : BaseFragment() {
+class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickListener {
 
     private lateinit var searchTrendingViewModel: SearchTrendingViewModel
     private var binding: FragmentSearchTrendingBinding? = null
@@ -46,9 +47,24 @@ class SearchTrendingFragment : BaseFragment() {
 
             if (adapter == null) {
                 adapter = TrendingAdapter(requireContext(), gifResponse.data)
+                (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
                 gifSearchResultView.adapter = adapter
             } else {
                 adapter?.setGifData(gifResponse.data)
+            }
+        }
+
+        searchTrendingViewModel.insertComplete.observe(viewLifecycleOwner) {
+            if (it != null && it.first) {
+                val id = it.second
+                var indexChanged = -1
+                adapter?.getGifData()?.forEachIndexed { index, gifData ->
+                    if(gifData.id == id) {
+                        gifData.isFavorite = true
+                        indexChanged = index
+                    }
+                }
+                adapter?.notifyItemChanged(indexChanged)
             }
         }
     }
@@ -57,7 +73,7 @@ class SearchTrendingFragment : BaseFragment() {
         binding?.gifSearchImgButton?.setOnClickListener {
             binding?.gifSearchView?.hideSoftKeyboard(requireContext())
             val queryString = binding?.gifSearchView?.query?.toString()
-            if(queryString?.isNotEmpty() == true) {
+            if (queryString?.isNotEmpty() == true) {
                 searchTrendingViewModel.searchGifs(queryString)
             }
         }
@@ -84,5 +100,9 @@ class SearchTrendingFragment : BaseFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
+    }
+
+    override fun onFavoriteClicked(gifData: GifData) {
+        searchTrendingViewModel.insertFavoriteGif(gifData)
     }
 }

@@ -1,27 +1,24 @@
 package com.example.giphydemo.service
 
+import android.content.Context
 import com.example.giphydemo.model.GifResponse
+import com.example.giphydemo.model.database.GifDatabase
+import com.example.giphydemo.model.database.entity.FavoriteGifs
 import retrofit2.Response
 
-class Repository {
+class Repository(context: Context) {
+    private val service by lazy { APIClient.getRetrofitService() }
+    private val gifDatabase by lazy { GifDatabase.getDatabase(context) }
 
-    private val service by lazy {
-        APIClient.getRetrofitService()
-    }
+    suspend fun getTrendingGifs(queryMap: Map<String, String>): Response<GifResponse> =
+        service.getTrendingGifs(queryMap)
 
-    companion object {
-        private val instance = Repository()
+    suspend fun searchGifs(queryMap: Map<String, String>): Response<GifResponse> =
+        service.searchGifs(queryMap)
 
-        fun getInstance(): Repository {
-            return instance
-        }
-    }
+    suspend fun insertGifData(favoriteGifs: FavoriteGifs) =
+        gifDatabase.gifDao().insertGifData(favoriteGifs)
 
-    suspend fun getTrendingGifs(queryMap: Map<String, String>): Response<GifResponse> {
-        return service.getTrendingGifs(queryMap)
-    }
-
-    suspend fun searchGifs(queryMap: Map<String, String>): Response<GifResponse> {
-        return service.searchGifs(queryMap)
-    }
+    suspend fun retrieveAllFavorites(): List<FavoriteGifs> =
+        gifDatabase.gifDao().selectAllFavorites()
 }

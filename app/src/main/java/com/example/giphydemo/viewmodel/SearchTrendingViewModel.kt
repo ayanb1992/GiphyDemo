@@ -1,20 +1,37 @@
 package com.example.giphydemo.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.giphydemo.BuildConfig
+import com.example.giphydemo.model.GifData
 import com.example.giphydemo.model.GifResponse
+import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.service.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class SearchTrendingViewModel : ViewModel() {
+class SearchTrendingViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = Repository.getInstance()
+    private val repository by lazy { Repository(application) }
 
     private val _gifsResponse = MutableLiveData<GifResponse>()
-    val gifsResponse = _gifsResponse
+    val gifsResponse: LiveData<GifResponse> = _gifsResponse
+
+    private val _insertComplete = MutableLiveData<Pair<Boolean, String>>()
+    val insertComplete: LiveData<Pair<Boolean, String>> = _insertComplete
+
+    fun insertFavoriteGif(gifData: GifData) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val dataToBeInserted =
+                FavoriteGifs(gifData.id, gifData.images.downsizedMedium?.url ?: "", gifData.title)
+            repository.insertGifData(dataToBeInserted).also {
+                _insertComplete.postValue(true to gifData.id)
+            }
+        }
+    }
 
     fun getTrendingGifs() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -24,7 +41,7 @@ class SearchTrendingViewModel : ViewModel() {
                 rating = "g"
             )
             repository.getTrendingGifs(queryMap).apply {
-                if(isSuccessful) {
+                if (isSuccessful) {
                     _gifsResponse.postValue(body())
                 }
             }
@@ -42,7 +59,7 @@ class SearchTrendingViewModel : ViewModel() {
                 lang = "en"
             )
             repository.searchGifs(queryMap).apply {
-                if(isSuccessful) {
+                if (isSuccessful) {
                     _gifsResponse.postValue(body())
                 }
             }
