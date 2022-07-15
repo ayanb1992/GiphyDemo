@@ -23,12 +23,23 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
     private val _insertComplete = MutableLiveData<Pair<Boolean, String>>()
     val insertComplete: LiveData<Pair<Boolean, String>> = _insertComplete
 
+    private val _removeComplete = MutableLiveData<Pair<Boolean, String>>()
+    val removeComplete: LiveData<Pair<Boolean, String>> = _removeComplete
+
     fun insertFavoriteGif(gifData: GifData) {
         viewModelScope.launch(Dispatchers.IO) {
             val dataToBeInserted =
                 FavoriteGifs(gifData.id, gifData.images.downsizedMedium?.url ?: "", gifData.title)
             repository.insertGifData(dataToBeInserted).also {
                 _insertComplete.postValue(true to gifData.id)
+            }
+        }
+    }
+
+    fun removeFavoriteGif(gifData: GifData) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.removeFavoriteGif(gifData.id).also {
+                _removeComplete.postValue(true to gifData.id)
             }
         }
     }

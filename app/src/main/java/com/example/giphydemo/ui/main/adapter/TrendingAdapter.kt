@@ -59,7 +59,7 @@ class TrendingAdapter(private val context: Context, private var data: List<GifDa
             .into(viewHolder.gifView)
 
         viewHolder.markFavoriteBtn.setOnClickListener {
-            if(!data[position].isFavorite) onFavoriteClickListener?.onFavoriteClicked(data[position])
+            onFavoriteClickListener?.onFavoriteClicked(data[position])
         }
     }
 

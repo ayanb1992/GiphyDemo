@@ -14,4 +14,7 @@ interface GifDao {
 
     @Query("SELECT * FROM favorite_gifs")
     fun selectAllFavorites(): List<FavoriteGifs>
+
+    @Query("DELETE FROM favorite_gifs WHERE id=:id")
+    fun removeGifData(id: String)
 }

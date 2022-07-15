@@ -16,9 +16,11 @@ class Repository(context: Context) {
     suspend fun searchGifs(queryMap: Map<String, String>): Response<GifResponse> =
         service.searchGifs(queryMap)
 
-    suspend fun insertGifData(favoriteGifs: FavoriteGifs) =
+    fun insertGifData(favoriteGifs: FavoriteGifs) =
         gifDatabase.gifDao().insertGifData(favoriteGifs)
 
-    suspend fun retrieveAllFavorites(): List<FavoriteGifs> =
+    fun retrieveAllFavorites(): List<FavoriteGifs> =
         gifDatabase.gifDao().selectAllFavorites()
+
+    fun removeFavoriteGif(id: String) = gifDatabase.gifDao().removeGifData(id)
 }

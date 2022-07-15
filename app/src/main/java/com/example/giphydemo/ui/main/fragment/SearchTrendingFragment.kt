@@ -64,7 +64,21 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
                         indexChanged = index
                     }
                 }
-                adapter?.notifyItemChanged(indexChanged)
+                if(indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
+            }
+        }
+
+        searchTrendingViewModel.removeComplete.observe(viewLifecycleOwner) {
+            if (it != null && it.first) {
+                val id = it.second
+                var indexChanged = -1
+                adapter?.getGifData()?.forEachIndexed { index, gifData ->
+                    if(gifData.id == id) {
+                        gifData.isFavorite = false
+                        indexChanged = index
+                    }
+                }
+                if(indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
             }
         }
     }
@@ -103,6 +117,8 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     }
 
     override fun onFavoriteClicked(gifData: GifData) {
-        searchTrendingViewModel.insertFavoriteGif(gifData)
+        if(gifData.isFavorite)
+            searchTrendingViewModel.removeFavoriteGif(gifData)
+        else searchTrendingViewModel.insertFavoriteGif(gifData)
     }
 }
