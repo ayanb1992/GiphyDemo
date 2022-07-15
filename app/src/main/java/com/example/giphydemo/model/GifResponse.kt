@@ -10,7 +10,8 @@ data class GifData(
     val username: String,
     val title: String,
     @SerializedName("bitly_gif_url") val bitlyGifUrl: String,
-    val images: Images
+    val images: Images,
+    var isFavorite: Boolean = false
 )
 
 data class Images(

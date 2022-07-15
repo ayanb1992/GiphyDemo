@@ -71,7 +71,7 @@ class SearchTrendingFragment : BaseFragment() {
 
     override fun onStart() {
         super.onStart()
-        //searchTrendingViewModel.getTrendingGifs()
+        searchTrendingViewModel.getTrendingGifs()
     }
 
     companion object {

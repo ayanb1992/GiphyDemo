@@ -3,4 +3,6 @@
     <string name="search_trending_tab">Trending</string>
     <string name="favorites_tab">Favorites</string>
     <string name="gif_view_content_description">Gif Content</string>
+    <string name="add_fav">Add Favorite</string>
+    <string name="remove_fav">Remove Favorite</string>
 </resources>
