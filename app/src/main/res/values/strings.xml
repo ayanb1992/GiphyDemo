@@ -2,4 +2,5 @@
     <string name="app_name">GiphyDemo</string>
     <string name="search_trending_tab">Trending</string>
     <string name="favorites_tab">Favorites</string>
+    <string name="gif_view_content_description">Gif Content</string>
 </resources>

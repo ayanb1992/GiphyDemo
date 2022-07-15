@@ -1,6 +1,7 @@
 package com.example.giphydemo.service
 
 import com.example.giphydemo.BuildConfig
+import com.example.giphydemo.util.Constants
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -19,20 +20,20 @@ object APIClient {
         val okHttpClientBuilder = OkHttpClient.Builder()
             .apply {
                 if (BuildConfig.DEBUG) addInterceptor(getLoggingInterceptor())
-                connectTimeout(BuildConfig.TIMEOUT.toLong(), TimeUnit.MILLISECONDS)
+                connectTimeout(Constants.API_TIME_OUT, TimeUnit.MILLISECONDS)
             }
         return okHttpClientBuilder
     }
 
     private fun getLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
+            level = HttpLoggingInterceptor.Level.BODY
         }
     }
 
     fun getRetrofitService(): APIService {
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl(Constants.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().create()))
             .client(okHttpClient)
             .build().create(APIService::class.java)

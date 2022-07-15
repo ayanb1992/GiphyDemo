@@ -9,4 +9,7 @@ interface APIService {
 
     @GET("gifs/trending")
     suspend fun getTrendingGifs(@QueryMap queryMap: Map<String, String>): Response<GifResponse>
+
+    @GET("gifs/search")
+    suspend fun searchGifs(@QueryMap queryMap: Map<String, String>): Response<GifResponse>
 }

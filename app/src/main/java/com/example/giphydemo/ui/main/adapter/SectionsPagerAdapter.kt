@@ -1,10 +1,12 @@
-package com.example.giphydemo.ui.main
+package com.example.giphydemo.ui.main.adapter
 
 import android.content.Context
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import com.example.giphydemo.R
+import com.example.giphydemo.ui.main.fragment.FavoritesFragment
+import com.example.giphydemo.ui.main.fragment.SearchTrendingFragment
 
 private val TAB_TITLES = arrayOf(
     R.string.search_trending_tab,

@@ -1,4 +1,4 @@
-package com.example.giphydemo.ui.main
+package com.example.giphydemo.ui.main.fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import com.example.giphydemo.databinding.FragmentFavoritesBinding
+import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 import com.example.giphydemo.ui.main.common.BaseFragment
 
 class FavoritesFragment: BaseFragment() {

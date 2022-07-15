@@ -20,4 +20,8 @@ class Repository {
     suspend fun getTrendingGifs(queryMap: Map<String, String>): Response<GifResponse> {
         return service.getTrendingGifs(queryMap)
     }
+
+    suspend fun searchGifs(queryMap: Map<String, String>): Response<GifResponse> {
+        return service.searchGifs(queryMap)
+    }
 }
