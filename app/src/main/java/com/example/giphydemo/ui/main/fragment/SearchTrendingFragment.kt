@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -13,12 +14,11 @@ import com.example.giphydemo.databinding.FragmentSearchTrendingBinding
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.ui.main.adapter.TrendingAdapter
 import com.example.giphydemo.ui.main.common.BaseActivity
-import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.util.hideSoftKeyboard
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
 
-class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickListener {
+class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListener {
 
     private lateinit var searchTrendingViewModel: SearchTrendingViewModel
     private var binding: FragmentSearchTrendingBinding? = null
