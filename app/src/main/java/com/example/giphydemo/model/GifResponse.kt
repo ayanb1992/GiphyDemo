@@ -2,7 +2,7 @@ package com.example.giphydemo.model
 
 import com.google.gson.annotations.SerializedName
 
-data class GifResponse(val data: List<GifData>)
+data class GifResponse(val data: ArrayList<GifData>)
 
 data class GifData(
     val type: String,

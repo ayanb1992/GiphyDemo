@@ -8,5 +8,6 @@ import androidx.room.PrimaryKey
 data class FavoriteGifs(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "url") val url: String,
-    val title: String
+    val title: String,
+    var isFavorite: Boolean = true
 )

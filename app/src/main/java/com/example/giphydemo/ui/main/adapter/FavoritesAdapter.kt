@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -18,13 +19,13 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.example.giphydemo.R
-import com.example.giphydemo.model.GifData
+import com.example.giphydemo.model.database.entity.FavoriteGifs
 
-class TrendingAdapter(private val context: Context, private var data: ArrayList<GifData>) :
-    RecyclerView.Adapter<TrendingAdapter.ViewHolder>() {
+class FavoritesAdapter(private val context: Context, private var data: ArrayList<FavoriteGifs>) :
+    RecyclerView.Adapter<FavoritesAdapter.ViewHolder>() {
 
     interface OnFavoriteClickListener {
-        fun onFavoriteClicked(gifData: GifData)
+        fun onFavoriteClicked(gifData: FavoriteGifs)
     }
 
     private var onFavoriteClickListener: OnFavoriteClickListener? = null
@@ -33,20 +34,23 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
         this.onFavoriteClickListener = onFavoriteClickListener
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    fun setGifData(data: ArrayList<GifData>) {
-        this.data = data
-        notifyDataSetChanged()
+    fun setGifData(data: ArrayList<FavoriteGifs>) {
+        val diffCallback = FavoritesCallback(this.data, data)
+        val diffFavoriteGifs = DiffUtil.calculateDiff(diffCallback)
+        this.data.clear()
+        this.data.addAll(data)
+        diffFavoriteGifs.dispatchUpdatesTo(this)
     }
 
-    fun getGifData(): ArrayList<GifData> {
+    fun getGifData(): ArrayList<FavoriteGifs> {
         return data
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     fun clearGifData() {
+        val diffCallback = FavoritesCallback(this.data, data)
+        val diffFavoriteGifs = DiffUtil.calculateDiff(diffCallback)
         this.data.clear()
-        notifyDataSetChanged()
+        diffFavoriteGifs.dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, position: Int): ViewHolder {
@@ -57,7 +61,7 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         Glide.with(context)
-            .load(data[position].images.downsizedMedium?.url)
+            .load(data[position].url)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .skipMemoryCache(false)
             .transition(DrawableTransitionOptions.withCrossFade())
@@ -120,12 +124,20 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        var gifView: ImageView
-        var favIndicator: ImageButton
+        var gifView: ImageView = view.findViewById<View>(R.id.gifView) as ImageView
+        var favIndicator: ImageButton = view.findViewById(R.id.favIndicator) as ImageButton
+    }
 
-        init {
-            gifView = view.findViewById<View>(R.id.gifView) as ImageView
-            favIndicator = view.findViewById(R.id.favIndicator) as ImageButton
+    class FavoritesCallback(private val oldList: ArrayList<FavoriteGifs>, private val newList: ArrayList<FavoriteGifs>) : DiffUtil.Callback() {
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].id === newList[newItemPosition].id
+        }
+        override fun areContentsTheSame(oldCourse: Int, newPosition: Int): Boolean {
+            val (_, value, name) = oldList[oldCourse]
+            val (_, value1, name1) = newList[newPosition]
+            return name == name1 && value == value1
         }
     }
 }

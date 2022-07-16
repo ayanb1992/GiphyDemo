@@ -7,7 +7,8 @@
         <entry key="..\:/Users/sanch/AndroidStudioProjects/GiphyDemo/app/src/main/res/layout/fragment_favorites.xml" value="0.15677083333333333" />
         <entry key="..\:/Users/sanch/AndroidStudioProjects/GiphyDemo/app/src/main/res/layout/fragment_main.xml" value="0.15677083333333333" />
         <entry key="..\:/Users/sanch/AndroidStudioProjects/GiphyDemo/app/src/main/res/layout/fragment_search_trending.xml" value="0.25" />
-        <entry key="..\:/Users/sanch/AndroidStudioProjects/GiphyDemo/app/src/main/res/layout/gif_view.xml" value="0.24322916666666666" />
+        <entry key="..\:/Users/sanch/AndroidStudioProjects/GiphyDemo/app/src/main/res/layout/gif_view.xml" value="0.1" />
+        <entry key="..\:/Users/sanch/AndroidStudioProjects/GiphyDemo/app/src/main/res/layout/loader_layout.xml" value="0.14722222222222223" />
       </map>
     </option>
   </component>

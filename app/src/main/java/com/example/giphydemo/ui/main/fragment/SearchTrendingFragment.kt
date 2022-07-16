@@ -39,18 +39,33 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
         return (root as View)
     }
 
+    private fun showLoader() {
+        binding?.loaderLayout?.root?.visibility = View.VISIBLE
+    }
+
+    private fun hideLoader() {
+        binding?.loaderLayout?.root?.visibility = View.GONE
+    }
+
     private fun setupObservers() {
         searchTrendingViewModel.gifsResponse.observe(viewLifecycleOwner) { gifResponse ->
-            val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
-            val layoutManager = LinearLayoutManager(requireContext())
-            gifSearchResultView.layoutManager = layoutManager
+            hideLoader()
+            if(gifResponse.data.isNotEmpty()) {
+                binding?.noFavFoundTv?.visibility = View.GONE
+                val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
+                val layoutManager = LinearLayoutManager(requireContext())
+                gifSearchResultView.layoutManager = layoutManager
 
-            if (adapter == null) {
-                adapter = TrendingAdapter(requireContext(), gifResponse.data)
-                (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
-                gifSearchResultView.adapter = adapter
+                if (adapter == null) {
+                    adapter = TrendingAdapter(requireContext(), gifResponse.data)
+                    (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
+                    gifSearchResultView.adapter = adapter
+                } else {
+                    adapter?.setGifData(gifResponse.data)
+                }
             } else {
-                adapter?.setGifData(gifResponse.data)
+                binding?.noFavFoundTv?.visibility = View.VISIBLE
+                adapter?.clearGifData()
             }
         }
 
@@ -59,12 +74,12 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
                 val id = it.second
                 var indexChanged = -1
                 adapter?.getGifData()?.forEachIndexed { index, gifData ->
-                    if(gifData.id == id) {
+                    if (gifData.id == id) {
                         gifData.isFavorite = true
                         indexChanged = index
                     }
                 }
-                if(indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
+                if (indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
             }
         }
 
@@ -73,34 +88,62 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
                 val id = it.second
                 var indexChanged = -1
                 adapter?.getGifData()?.forEachIndexed { index, gifData ->
-                    if(gifData.id == id) {
+                    if (gifData.id == id) {
                         gifData.isFavorite = false
                         indexChanged = index
                     }
                 }
-                if(indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
+                if (indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
             }
         }
     }
 
     private fun setupListeners() {
         binding?.gifSearchImgButton?.setOnClickListener {
-            binding?.gifSearchView?.hideSoftKeyboard(requireContext())
-            val queryString = binding?.gifSearchView?.query?.toString()
+            binding?.gifSearchEditText?.hideSoftKeyboard(requireContext())
+            val queryString = binding?.gifSearchEditText?.text?.toString()
             if (queryString?.isNotEmpty() == true) {
-                searchTrendingViewModel.searchGifs(queryString)
+                searchGifs(queryString)
             }
         }
 
-        binding?.gifSearchView?.setOnCloseListener {
-            binding?.gifSearchView?.hideSoftKeyboard(requireContext())
-            searchTrendingViewModel.getTrendingGifs()
-            false
+        binding?.gifSearchView?.setEndIconOnClickListener {
+            binding?.apply {
+                gifSearchEditText.clearFocus()
+                gifSearchEditText.hideSoftKeyboard(requireContext())
+                if (gifSearchEditText.text?.isNotEmpty() == true) {
+                    gifSearchEditText.setText("")
+                    loadTrendingGifsList()
+                }
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
+        loadTrendingGifsList()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (adapter != null && binding?.gifSearchEditText?.text?.toString()?.isEmpty() == true) {
+            adapter?.clearGifData()
+            loadTrendingGifsList()
+        } else if (adapter != null && binding?.gifSearchEditText?.text?.toString()?.isNotEmpty() == true) {
+            searchGifs(binding?.gifSearchEditText?.text?.toString() ?: "")
+        }
+    }
+
+    private fun searchGifs(queryString: String) {
+        showLoader()
+        adapter?.clearGifData()
+        binding?.noFavFoundTv?.visibility = View.GONE
+        searchTrendingViewModel.searchGifs(queryString)
+    }
+
+    private fun loadTrendingGifsList() {
+        showLoader()
+        binding?.noFavFoundTv?.visibility = View.GONE
         searchTrendingViewModel.getTrendingGifs()
     }
 
@@ -117,8 +160,8 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     }
 
     override fun onFavoriteClicked(gifData: GifData) {
-        if(gifData.isFavorite)
-            searchTrendingViewModel.removeFavoriteGif(gifData)
+        if (gifData.isFavorite)
+            searchTrendingViewModel.removeFavoriteGif(gifData.id)
         else searchTrendingViewModel.insertFavoriteGif(gifData)
     }
 }

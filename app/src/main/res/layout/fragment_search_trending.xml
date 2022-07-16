@@ -11,20 +11,55 @@
         android:id="@+id/gifSearchResultView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="16dp"
+        android:layout_margin="@dimen/activity_horizontal_margin"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/gifSearchView"
-        app:layout_constraintVertical_bias="0.501" />
+        app:layout_constraintVertical_bias="0.5" />
 
-    <androidx.appcompat.widget.SearchView
+    <TextView
+        android:id="@+id/noFavFoundTv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_24dp"
+        android:text="@string/no_search_results_found"
+        android:textAlignment="center"
+        android:textSize="@dimen/errr_text_size"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/gifSearchView" />
+
+    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/gifSearchView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginStart="@dimen/activity_horizontal_margin"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        app:endIconDrawable="@drawable/ic_baseline_close_24"
+        app:endIconMode="custom"
         app:layout_constraintEnd_toStartOf="@+id/gifSearchImgButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/gifSearchEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/transparent" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <include
+        android:id="@+id/loader_layout"
+        layout="@layout/loader_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -32,7 +67,8 @@
         android:id="@+id/gifSearchImgButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin"
+        android:backgroundTint="@color/white"
         android:src="@drawable/ic_baseline_search_24"
         app:layout_constraintBottom_toBottomOf="@+id/gifSearchView"
         app:layout_constraintEnd_toEndOf="parent"

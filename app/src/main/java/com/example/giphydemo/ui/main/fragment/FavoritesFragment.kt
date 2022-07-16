@@ -5,15 +5,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.giphydemo.databinding.FragmentFavoritesBinding
-import com.example.giphydemo.viewmodel.SearchTrendingViewModel
+import com.example.giphydemo.model.database.entity.FavoriteGifs
+import com.example.giphydemo.ui.main.adapter.FavoritesAdapter
 import com.example.giphydemo.ui.main.common.BaseFragment
+import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
-class FavoritesFragment: BaseFragment() {
+class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListener {
     private lateinit var pageViewModel: SearchTrendingViewModel
     private var _binding: FragmentFavoritesBinding? = null
 
     private val binding get() = _binding!!
+    private var adapter: FavoritesAdapter? = null
+
+    companion object {
+        const val COLUMN_COUNT = 2
+
+        @JvmStatic
+        fun newInstance(): FavoritesFragment {
+            return FavoritesFragment()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,22 +40,64 @@ class FavoritesFragment: BaseFragment() {
 
         _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
         val root = binding.root
+        setupObservers()
         return root
     }
 
-    companion object {
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        @JvmStatic
-        fun newInstance(): FavoritesFragment {
-            return FavoritesFragment()
+    private fun showLoader() {
+        binding.loaderLayout.root.visibility = View.VISIBLE
+    }
+
+    private fun hideLoader() {
+        binding.loaderLayout.root.visibility = View.GONE
+    }
+
+    private fun setupObservers() {
+        pageViewModel.allFavoriteGifs.observe(viewLifecycleOwner) {
+            hideLoader()
+            if (it.isNotEmpty()) {
+                binding.noFavFoundTv.visibility = View.GONE
+                val favoritesResultList = binding.favoritesResultList
+                favoritesResultList.layoutManager =
+                    GridLayoutManager(requireContext(), COLUMN_COUNT)
+                if (adapter == null) {
+                    adapter = FavoritesAdapter(requireContext(), (it as ArrayList))
+                    (adapter as FavoritesAdapter).setOnFavoriteClickListener(this@FavoritesFragment)
+                    favoritesResultList.adapter = adapter
+                } else {
+                    adapter?.setGifData(it)
+                }
+            } else {
+                adapter?.clearGifData()
+                binding.noFavFoundTv.visibility = View.VISIBLE
+            }
         }
+
+        pageViewModel.removeComplete.observe(viewLifecycleOwner) {
+            if (it != null && it.first) {
+                val list = ArrayList<FavoriteGifs>()
+                list.apply {
+                    addAll(adapter?.getGifData() ?: emptyList())
+                    removeIf { item -> item.id == it.second }
+                    adapter?.setGifData(this)
+                    if (this.isEmpty()) binding.noFavFoundTv.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showLoader()
+        pageViewModel.fetchAllFavoriteGifs()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onFavoriteClicked(gifData: FavoriteGifs) {
+        if (gifData.isFavorite) pageViewModel.removeFavoriteGif(gifData.id)
     }
 }
