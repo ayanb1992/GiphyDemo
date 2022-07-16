@@ -6,11 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.giphydemo.databinding.FragmentSearchTrendingBinding
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.ui.main.adapter.TrendingAdapter
+import com.example.giphydemo.ui.main.common.BaseActivity
 import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.util.hideSoftKeyboard
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
@@ -55,6 +57,12 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
                 val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
                 val layoutManager = LinearLayoutManager(requireContext())
                 gifSearchResultView.layoutManager = layoutManager
+                gifSearchResultView.addItemDecoration(
+                    DividerItemDecoration(
+                        context,
+                        layoutManager.orientation
+                    )
+                )
 
                 if (adapter == null) {
                     adapter = TrendingAdapter(requireContext(), gifResponse.data)
@@ -94,6 +102,22 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
                     }
                 }
                 if (indexChanged != -1) adapter?.notifyItemChanged(indexChanged)
+            }
+        }
+
+        searchTrendingViewModel.dbError.observe(viewLifecycleOwner) {
+            if(it != null) {
+                hideLoader()
+                (activity as BaseActivity).showErrorToast()
+                searchTrendingViewModel.dbError.value = null
+            }
+        }
+
+        searchTrendingViewModel.networkError.observe(viewLifecycleOwner) {
+            if(it != null) {
+                hideLoader()
+                (activity as BaseActivity).showErrorToast()
+                searchTrendingViewModel.networkError.value = null
             }
         }
     }

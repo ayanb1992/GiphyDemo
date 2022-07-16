@@ -1,13 +1,13 @@
 package com.example.giphydemo
 
 import android.os.Bundle
-import com.google.android.material.tabs.TabLayout
 import androidx.viewpager.widget.ViewPager
-import androidx.appcompat.app.AppCompatActivity
-import com.example.giphydemo.ui.main.adapter.SectionsPagerAdapter
 import com.example.giphydemo.databinding.ActivityMainBinding
+import com.example.giphydemo.ui.main.adapter.SectionsPagerAdapter
+import com.example.giphydemo.ui.main.common.BaseActivity
+import com.google.android.material.tabs.TabLayout
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMainBinding
 

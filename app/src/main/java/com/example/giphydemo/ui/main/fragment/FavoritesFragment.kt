@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.giphydemo.databinding.FragmentFavoritesBinding
 import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.ui.main.adapter.FavoritesAdapter
+import com.example.giphydemo.ui.main.common.BaseActivity
 import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
@@ -82,6 +83,22 @@ class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListen
                     adapter?.setGifData(this)
                     if (this.isEmpty()) binding.noFavFoundTv.visibility = View.VISIBLE
                 }
+            }
+        }
+
+        pageViewModel.dbError.observe(viewLifecycleOwner) {
+            if(it != null) {
+                hideLoader()
+                (activity as BaseActivity).showErrorToast()
+                pageViewModel.dbError.value = null
+            }
+        }
+
+        pageViewModel.networkError.observe(viewLifecycleOwner) {
+            if(it != null) {
+                hideLoader()
+                (activity as BaseActivity).showErrorToast()
+                pageViewModel.networkError.value = null
             }
         }
     }

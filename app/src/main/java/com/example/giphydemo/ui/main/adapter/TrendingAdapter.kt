@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.ProgressBar
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -56,6 +57,7 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+        viewHolder.itemLoader.visibility = View.VISIBLE
         Glide.with(context)
             .load(data[position].images.downsizedMedium?.url)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -81,6 +83,7 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
                 target: Target<Drawable>?,
                 isFirstResource: Boolean
             ): Boolean {
+                viewHolder.itemLoader.visibility = View.GONE
                 return false
             }
 
@@ -91,6 +94,7 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
                 dataSource: DataSource?,
                 isFirstResource: Boolean
             ): Boolean {
+                viewHolder.itemLoader.visibility = View.GONE
                 setFavoriteIcon(data[position].isFavorite, viewHolder)
                 return false
             }
@@ -120,12 +124,8 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        var gifView: ImageView
-        var favIndicator: ImageButton
-
-        init {
-            gifView = view.findViewById<View>(R.id.gifView) as ImageView
-            favIndicator = view.findViewById(R.id.favIndicator) as ImageButton
-        }
+        var gifView: ImageView = view.findViewById<View>(R.id.gifView) as ImageView
+        var favIndicator: ImageButton = view.findViewById(R.id.favIndicator) as ImageButton
+        var itemLoader: ProgressBar = view.findViewById(R.id.itemLoader) as ProgressBar
     }
 }

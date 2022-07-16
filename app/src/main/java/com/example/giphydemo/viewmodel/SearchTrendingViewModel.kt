@@ -10,6 +10,7 @@ import com.example.giphydemo.model.GifData
 import com.example.giphydemo.model.GifResponse
 import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.service.Repository
+import com.example.giphydemo.util.isNetworkAvailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -21,6 +22,8 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
         private const val OFFSET = 0
         private const val LANG = "en"
     }
+
+    private val context = application
 
     private val repository by lazy { Repository(application) }
 
@@ -36,75 +39,110 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
     private val _allFavoriteGifs = MutableLiveData<ArrayList<FavoriteGifs>>()
     val allFavoriteGifs: LiveData<ArrayList<FavoriteGifs>> = _allFavoriteGifs
 
+    val networkError = MutableLiveData<Boolean?>()
+
+    val dbError = MutableLiveData<Boolean?>()
+
     fun insertFavoriteGif(gifData: GifData) {
         viewModelScope.launch(Dispatchers.IO) {
             val dataToBeInserted =
                 FavoriteGifs(gifData.id, gifData.images.downsizedMedium?.url ?: "", gifData.title)
-            repository.insertGifData(dataToBeInserted).also {
-                _insertComplete.postValue(true to gifData.id)
+            try {
+                repository.insertGifData(dataToBeInserted).also {
+                    _insertComplete.postValue(true to gifData.id)
+                }
+            } catch (e: Exception) {
+                dbError.postValue(true)
             }
         }
     }
 
     fun removeFavoriteGif(gifId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.removeFavoriteGif(gifId).also {
-                _removeComplete.postValue(true to gifId)
+            try {
+                repository.removeFavoriteGif(gifId).also {
+                    _removeComplete.postValue(true to gifId)
+                }
+            } catch (e: Exception) {
+                dbError.postValue(true)
             }
         }
     }
 
     fun fetchAllFavoriteGifs() {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.retrieveAllFavorites().also {
-                _allFavoriteGifs.postValue(it as ArrayList)
+            try {
+                repository.retrieveAllFavorites().also {
+                    _allFavoriteGifs.postValue(it as ArrayList)
+                }
+            } catch (e: Exception) {
+                dbError.postValue(true)
             }
         }
     }
 
     fun getTrendingGifs() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val queryMap = QueryFactory.getTrendingGifsQuery(
-                apiKey = BuildConfig.API_KEY,
-                limit = LIMIT,
-                rating = RATING
-            )
-            repository.getTrendingGifs(queryMap).apply {
-                if (isSuccessful) {
-                    val favoriteGifs = repository.retrieveAllFavorites()
-                    (body() as GifResponse).data.forEach {
-                        favoriteGifs.find { favGif -> favGif.id == it.id }?.let { _ ->
-                            it.isFavorite = true
+        if (context.isNetworkAvailable()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val queryMap = QueryFactory.getTrendingGifsQuery(
+                    apiKey = BuildConfig.API_KEY,
+                    limit = LIMIT,
+                    rating = RATING
+                )
+                repository.getTrendingGifs(queryMap).apply {
+                    if (isSuccessful) {
+                        try {
+                            val favoriteGifs = repository.retrieveAllFavorites()
+                            (body() as GifResponse).data.forEach {
+                                favoriteGifs.find { favGif -> favGif.id == it.id }?.let { _ ->
+                                    it.isFavorite = true
+                                }
+                            }
+                        } catch (e: Exception) {
+                            dbError.postValue(true)
                         }
+                        _gifsResponse.postValue(body())
+                    } else {
+                        networkError.postValue(true)
                     }
-
-                    _gifsResponse.postValue(body())
                 }
             }
+        } else {
+            networkError.postValue(true)
         }
     }
 
     fun searchGifs(query: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val queryMap = QueryFactory.getSearchQueryParams(
-                apiKey = BuildConfig.API_KEY,
-                limit = LIMIT,
-                query = query,
-                rating = RATING,
-                offset = OFFSET,
-                lang = LANG
-            )
-            repository.searchGifs(queryMap).apply {
-                if (isSuccessful) {
-                    val favoriteGifs = repository.retrieveAllFavorites()
-                    (body() as GifResponse).data.forEach {
-                        favoriteGifs.find { favGif -> favGif.id == it.id }?.let { _ ->
-                            it.isFavorite = true
+        if (context.isNetworkAvailable()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val queryMap = QueryFactory.getSearchQueryParams(
+                    apiKey = BuildConfig.API_KEY,
+                    limit = LIMIT,
+                    query = query,
+                    rating = RATING,
+                    offset = OFFSET,
+                    lang = LANG
+                )
+                repository.searchGifs(queryMap).apply {
+                    if (isSuccessful) {
+                        try {
+                            val favoriteGifs = repository.retrieveAllFavorites()
+                            (body() as GifResponse).data.forEach {
+                                favoriteGifs.find { favGif -> favGif.id == it.id }?.let { _ ->
+                                    it.isFavorite = true
+                                }
+                            }
+                        } catch (e: Exception) {
+                            dbError.postValue(true)
                         }
+                        _gifsResponse.postValue(body())
+                    } else {
+                        networkError.postValue(true)
                     }
-                    _gifsResponse.postValue(body())
                 }
             }
+        } else {
+            networkError.postValue(true)
         }
     }
 }

@@ -28,4 +28,16 @@
         app:layout_constraintStart_toStartOf="@+id/gifView"
         app:layout_constraintTop_toBottomOf="@+id/gifView"
         app:tint="@android:color/holo_red_dark" />
+
+    <ProgressBar
+        android:id="@+id/itemLoader"
+        android:layout_width="@dimen/margin_24dp"
+        android:layout_height="@dimen/margin_24dp"
+        android:indeterminateTint="@android:color/holo_red_dark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
