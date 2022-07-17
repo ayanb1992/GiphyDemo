@@ -14,6 +14,7 @@ import com.example.giphydemo.model.ErrorEntity
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.ui.main.adapter.TrendingAdapter
 import com.example.giphydemo.ui.main.common.BaseFragment
+import com.example.giphydemo.ui.main.common.PaginationScrollListener
 import com.example.giphydemo.util.hideSoftKeyboard
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
@@ -23,6 +24,21 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     private lateinit var searchTrendingViewModel: SearchTrendingViewModel
     private var binding: FragmentSearchTrendingBinding? = null
     private var adapter: TrendingAdapter? = null
+    private var paginationScrollListener: PaginationScrollListener? = null
+
+    private var isLastPage: Boolean = false
+    private var isLoading: Boolean = false
+    private var totalPages: Int = 0
+    private var currentPage: Int = 1
+
+    companion object {
+        private const val DEFAULT_OFFSET = 25
+
+        @JvmStatic
+        fun newInstance(): SearchTrendingFragment {
+            return SearchTrendingFragment()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,9 +77,44 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
                 layoutManager.orientation
             )
         )
+        createPaginationScrollListener(layoutManager)
         adapter = TrendingAdapter(requireContext())
         (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
         gifSearchResultView.adapter = adapter
+    }
+
+    private fun createPaginationScrollListener(layoutManager: LinearLayoutManager) {
+        paginationScrollListener = object : PaginationScrollListener(layoutManager) {
+            override fun isLastPage(): Boolean {
+                return isLastPage
+            }
+
+            override fun isLoading(): Boolean {
+                return isLoading
+            }
+
+            override fun loadMoreItems() {
+                isLoading = true
+                binding?.progressbar?.visibility = View.VISIBLE
+                getMoreItems()
+            }
+        }
+    }
+
+    fun getMoreItems() {
+        if (currentPage >= totalPages) {
+            isLastPage = true
+            binding?.progressbar?.visibility = View.GONE
+        } else
+            searchGifs(
+                queryString = binding?.gifSearchEditText?.text?.toString() ?: "",
+                offset = currentPage * DEFAULT_OFFSET
+            )
+    }
+
+    private fun searchGifs(queryString: String, offset: Int) {
+        binding?.noFavFoundTv?.visibility = View.GONE
+        searchTrendingViewModel.searchGifs(queryString, offset)
     }
 
     private fun setupObservers() {
@@ -71,8 +122,28 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
             hideLoader()
             if (gifResponse.second.data.isNotEmpty()) {
                 binding?.noFavFoundTv?.visibility = View.GONE
-                adapter?.setIsForSearch(gifResponse.first)
-                adapter?.setGifData(gifResponse.second.data)
+                if (gifResponse.first) {
+                    if (totalPages == 0)
+                        totalPages = gifResponse.second.pagination.totalCount / DEFAULT_OFFSET
+                    paginationScrollListener?.let {
+                        binding?.gifSearchResultView?.addOnScrollListener(it)
+                    }
+                    binding?.progressbar?.visibility = View.GONE
+                    if (currentPage == 1) {
+                        adapter?.setGifData(gifResponse.second.data)
+                        currentPage++
+                    } else {
+                        isLoading = false
+                        adapter?.addGifData(gifResponse.second.data)
+                        currentPage++
+                    }
+                } else {
+                    paginationScrollListener?.let {
+                        binding?.gifSearchResultView?.removeOnScrollListener(it)
+                    }
+                    adapter?.setGifData(gifResponse.second.data)
+                }
+
             } else {
                 binding?.noFavFoundTv?.visibility = View.VISIBLE
                 adapter?.clearGifData()
@@ -118,9 +189,13 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
         searchTrendingViewModel.networkError.observe(viewLifecycleOwner) {
             if (it != null) {
                 hideLoader()
-                when(it) {
-                    is ErrorEntity.CustomError -> showErrorToast(it.throwable?.localizedMessage ?: "")
-                    is ErrorEntity.NetworkError -> showErrorToast(it.throwable?.localizedMessage ?: "")
+                when (it) {
+                    is ErrorEntity.CustomError -> showErrorToast(
+                        it.throwable?.localizedMessage ?: ""
+                    )
+                    is ErrorEntity.NetworkError -> showErrorToast(
+                        it.throwable?.localizedMessage ?: ""
+                    )
                     is ErrorEntity.APIError -> showErrorToast(it.throwable?.localizedMessage ?: "")
                     else -> showErrorToast()
                 }
@@ -173,6 +248,8 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     private fun searchGifs(queryString: String) {
         showLoader()
         adapter?.clearGifData()
+        totalPages = 0
+        currentPage = 1
         binding?.noFavFoundTv?.visibility = View.GONE
         searchTrendingViewModel.searchGifs(queryString)
     }
@@ -181,13 +258,6 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
         showLoader()
         binding?.noFavFoundTv?.visibility = View.GONE
         searchTrendingViewModel.getTrendingGifs()
-    }
-
-    companion object {
-        @JvmStatic
-        fun newInstance(): SearchTrendingFragment {
-            return SearchTrendingFragment()
-        }
     }
 
     override fun onDestroyView() {

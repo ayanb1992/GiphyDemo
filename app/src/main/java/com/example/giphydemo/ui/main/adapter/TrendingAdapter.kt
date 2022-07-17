@@ -33,15 +33,10 @@ class TrendingAdapter(
         fun onFavoriteClicked(gifData: GifData)
     }
 
-    private var isForSearch: Boolean = false
     private var onFavoriteClickListener: OnFavoriteClickListener? = null
 
     fun setOnFavoriteClickListener(onFavoriteClickListener: OnFavoriteClickListener) {
         this.onFavoriteClickListener = onFavoriteClickListener
-    }
-
-    fun setIsForSearch(value: Boolean) {
-        this.isForSearch = value
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -59,6 +54,12 @@ class TrendingAdapter(
     fun clearGifData() {
         this.data.clear()
         notifyDataSetChanged()
+    }
+
+    fun addGifData(data: ArrayList<GifData>) {
+        val previousSize = this.data.size
+        this.data.addAll(data)
+        notifyItemRangeChanged(previousSize, data.size)
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, position: Int): ViewHolder {
