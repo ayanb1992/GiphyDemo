@@ -21,6 +21,8 @@ import com.bumptech.glide.request.target.Target
 import com.example.giphydemo.R
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.util.Constants
+import com.example.giphydemo.util.Constants.DEFAULT_HAPTIC_DURATION
+import com.example.giphydemo.util.HapticHelper
 
 
 class TrendingAdapter(
@@ -81,6 +83,7 @@ class TrendingAdapter(
             .into(viewHolder.gifView)
 
         viewHolder.favIndicator.setOnClickListener {
+            HapticHelper.vibrate(context, DEFAULT_HAPTIC_DURATION)
             onFavoriteClickListener?.onFavoriteClicked(data[position])
         }
     }

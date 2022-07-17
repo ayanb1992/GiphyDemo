@@ -11,6 +11,7 @@ import com.example.giphydemo.model.ErrorEntity
 import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.ui.main.adapter.FavoritesAdapter
 import com.example.giphydemo.ui.main.common.BaseFragment
+import com.example.giphydemo.util.HapticHelper
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
 class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListener {
@@ -38,7 +39,6 @@ class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListen
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
         val root = binding.root
         setupObservers()
@@ -59,14 +59,16 @@ class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListen
             if (it.isNotEmpty()) {
                 binding.noFavFoundTv.visibility = View.GONE
                 val favoritesResultList = binding.favoritesResultList
-                favoritesResultList.layoutManager =
-                    GridLayoutManager(requireContext(), COLUMN_COUNT)
-                if (adapter == null) {
-                    adapter = FavoritesAdapter(requireContext(), (it as ArrayList))
-                    (adapter as FavoritesAdapter).setOnFavoriteClickListener(this@FavoritesFragment)
-                    favoritesResultList.adapter = adapter
-                } else {
-                    adapter?.setGifData(it)
+                context?.let { ctx ->
+                    favoritesResultList.layoutManager =
+                        GridLayoutManager(ctx, COLUMN_COUNT)
+                    if (adapter == null) {
+                        adapter = FavoritesAdapter(ctx, (it as ArrayList))
+                        (adapter as FavoritesAdapter).setOnFavoriteClickListener(this@FavoritesFragment)
+                        favoritesResultList.adapter = adapter
+                    } else {
+                        adapter?.setGifData(it)
+                    }
                 }
             } else {
                 adapter?.clearGifData()
@@ -121,6 +123,11 @@ class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListen
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onPause() {
+        super.onPause()
+        HapticHelper.cancelVibration()
     }
 
     override fun onFavoriteClicked(gifData: FavoriteGifs) {

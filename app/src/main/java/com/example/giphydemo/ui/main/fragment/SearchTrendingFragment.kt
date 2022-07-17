@@ -1,10 +1,10 @@
 package com.example.giphydemo.ui.main.fragment
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,6 +15,9 @@ import com.example.giphydemo.model.GifData
 import com.example.giphydemo.ui.main.adapter.TrendingAdapter
 import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.ui.main.common.PaginationScrollListener
+import com.example.giphydemo.util.Constants.DEFAULT_HAPTIC_DURATION
+import com.example.giphydemo.util.Constants.DEFAULT_SEARCH_GIF_OFFSET
+import com.example.giphydemo.util.HapticHelper
 import com.example.giphydemo.util.hideSoftKeyboard
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
@@ -26,14 +29,7 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     private var adapter: TrendingAdapter? = null
     private var paginationScrollListener: PaginationScrollListener? = null
 
-    private var isLastPage: Boolean = false
-    private var isLoading: Boolean = false
-    private var totalPages: Int = 0
-    private var currentPage: Int = 1
-
     companion object {
-        private const val DEFAULT_OFFSET = 25
-
         @JvmStatic
         fun newInstance(): SearchTrendingFragment {
             return SearchTrendingFragment()
@@ -45,7 +41,6 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
         searchTrendingViewModel = ViewModelProvider(this)[SearchTrendingViewModel::class.java]
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -67,34 +62,36 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     }
 
     private fun setupResultList() {
-        val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
-        val layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
-        gifSearchResultView.layoutManager = layoutManager
-        gifSearchResultView.addItemDecoration(
-            DividerItemDecoration(
-                context,
-                layoutManager.orientation
+        context?.let { ctx ->
+            val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
+            val layoutManager =
+                LinearLayoutManager(ctx, LinearLayoutManager.VERTICAL, false)
+            gifSearchResultView.layoutManager = layoutManager
+            gifSearchResultView.addItemDecoration(
+                DividerItemDecoration(
+                    context,
+                    layoutManager.orientation
+                )
             )
-        )
-        createPaginationScrollListener(layoutManager)
-        adapter = TrendingAdapter(requireContext())
-        (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
-        gifSearchResultView.adapter = adapter
+            createPaginationScrollListener(layoutManager)
+            adapter = TrendingAdapter(ctx)
+            (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
+            gifSearchResultView.adapter = adapter
+        }
     }
 
     private fun createPaginationScrollListener(layoutManager: LinearLayoutManager) {
         paginationScrollListener = object : PaginationScrollListener(layoutManager) {
             override fun isLastPage(): Boolean {
-                return isLastPage
+                return searchTrendingViewModel.isLastPage
             }
 
             override fun isLoading(): Boolean {
-                return isLoading
+                return searchTrendingViewModel.isLoading
             }
 
             override fun loadMoreItems() {
-                isLoading = true
+                searchTrendingViewModel.isLoading = true
                 binding?.progressbar?.visibility = View.VISIBLE
                 getMoreItems()
             }
@@ -102,13 +99,13 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
     }
 
     fun getMoreItems() {
-        if (currentPage >= totalPages) {
-            isLastPage = true
+        if (searchTrendingViewModel.currentPage >= searchTrendingViewModel.totalPages) {
+            searchTrendingViewModel.isLastPage = true
             binding?.progressbar?.visibility = View.GONE
         } else
             searchGifs(
                 queryString = binding?.gifSearchEditText?.text?.toString() ?: "",
-                offset = currentPage * DEFAULT_OFFSET
+                offset = searchTrendingViewModel.currentPage * DEFAULT_SEARCH_GIF_OFFSET
             )
     }
 
@@ -123,29 +120,42 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
             if (gifResponse.second.data.isNotEmpty()) {
                 binding?.noFavFoundTv?.visibility = View.GONE
                 if (gifResponse.first) {
-                    if (totalPages == 0)
-                        totalPages = gifResponse.second.pagination.totalCount / DEFAULT_OFFSET
+                    if (searchTrendingViewModel.totalPages == 0)
+                        searchTrendingViewModel.totalPages =
+                            gifResponse.second.pagination.totalCount / DEFAULT_SEARCH_GIF_OFFSET
                     paginationScrollListener?.let {
                         binding?.gifSearchResultView?.addOnScrollListener(it)
                     }
                     binding?.progressbar?.visibility = View.GONE
-                    if (currentPage == 1) {
+                    if (searchTrendingViewModel.currentPage == 1) {
+                        searchTrendingViewModel.dataList.apply {
+                            clear()
+                            addAll(gifResponse.second.data)
+                        }
                         adapter?.setGifData(gifResponse.second.data)
-                        currentPage++
+                        searchTrendingViewModel.currentPage++
                     } else {
-                        isLoading = false
+                        searchTrendingViewModel.isLoading = false
+                        searchTrendingViewModel.dataList.apply {
+                            addAll(gifResponse.second.data)
+                        }
                         adapter?.addGifData(gifResponse.second.data)
-                        currentPage++
+                        searchTrendingViewModel.currentPage++
                     }
                 } else {
                     paginationScrollListener?.let {
                         binding?.gifSearchResultView?.removeOnScrollListener(it)
+                    }
+                    searchTrendingViewModel.dataList.apply {
+                        clear()
+                        addAll(gifResponse.second.data)
                     }
                     adapter?.setGifData(gifResponse.second.data)
                 }
 
             } else {
                 binding?.noFavFoundTv?.visibility = View.VISIBLE
+                searchTrendingViewModel.dataList.clear()
                 adapter?.clearGifData()
             }
         }
@@ -206,7 +216,8 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
 
     private fun setupListeners() {
         binding?.gifSearchImgButton?.setOnClickListener {
-            binding?.gifSearchEditText?.hideSoftKeyboard(requireContext())
+            context?.let { ctx -> HapticHelper.vibrate(ctx, DEFAULT_HAPTIC_DURATION) }
+            context?.let { binding?.gifSearchEditText?.hideSoftKeyboard(it) }
             val queryString = binding?.gifSearchEditText?.text?.toString()
             if (queryString?.isNotEmpty() == true) {
                 searchGifs(queryString)
@@ -214,42 +225,43 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
         }
 
         binding?.gifSearchView?.setEndIconOnClickListener {
+            context?.let { ctx -> HapticHelper.vibrate(ctx, DEFAULT_HAPTIC_DURATION) }
             binding?.apply {
                 gifSearchEditText.clearFocus()
-                gifSearchEditText.hideSoftKeyboard(requireContext())
+                context?.let { binding?.gifSearchEditText?.hideSoftKeyboard(it) }
                 if (gifSearchEditText.text?.isNotEmpty() == true) {
                     gifSearchEditText.setText("")
+                    searchTrendingViewModel.dataList.clear()
                     adapter?.clearGifData()
                     loadTrendingGifsList()
                 }
             }
         }
-    }
 
-    override fun onStart() {
-        super.onStart()
-        loadTrendingGifsList()
+        binding?.gifSearchEditText?.addTextChangedListener {
+            searchTrendingViewModel.queryString = it?.toString() ?: ""
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        if (adapter?.getGifData()?.isEmpty() == false
-            && binding?.gifSearchEditText?.text?.toString()?.isEmpty() == true
-        ) {
+        if (searchTrendingViewModel.queryString.isNotEmpty()) {
+            binding?.gifSearchEditText?.setText(searchTrendingViewModel.queryString)
+        }
+        if (searchTrendingViewModel.dataList.isNotEmpty()) {
             adapter?.clearGifData()
+            adapter?.setGifData(searchTrendingViewModel.dataList)
+        } else {
             loadTrendingGifsList()
-        } else if (adapter?.getGifData()?.isEmpty() == false
-            && binding?.gifSearchEditText?.text?.toString()?.isNotEmpty() == true
-        ) {
-            searchGifs(binding?.gifSearchEditText?.text?.toString() ?: "")
         }
     }
 
     private fun searchGifs(queryString: String) {
         showLoader()
+        searchTrendingViewModel.dataList.clear()
         adapter?.clearGifData()
-        totalPages = 0
-        currentPage = 1
+        searchTrendingViewModel.totalPages = 0
+        searchTrendingViewModel.currentPage = 1
         binding?.noFavFoundTv?.visibility = View.GONE
         searchTrendingViewModel.searchGifs(queryString)
     }
@@ -269,5 +281,10 @@ class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickLi
         if (gifData.isFavorite)
             searchTrendingViewModel.removeFavoriteGif(gifData.id)
         else searchTrendingViewModel.insertFavoriteGif(gifData)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        HapticHelper.cancelVibration()
     }
 }

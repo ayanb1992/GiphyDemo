@@ -44,6 +44,14 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
 
     val dbError = MutableLiveData<ErrorEntity?>()
 
+    var queryString: String = ""
+    val dataList: ArrayList<GifData> = ArrayList()
+
+    var isLastPage: Boolean = false
+    var isLoading: Boolean = false
+    var totalPages: Int = 0
+    var currentPage: Int = 1
+
     fun insertFavoriteGif(gifData: GifData) {
         viewModelScope.launch(Dispatchers.IO) {
             val dataToBeInserted =

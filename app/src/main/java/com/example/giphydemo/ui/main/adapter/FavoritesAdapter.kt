@@ -19,6 +19,9 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.example.giphydemo.R
 import com.example.giphydemo.model.database.entity.FavoriteGifs
+import com.example.giphydemo.util.Constants
+import com.example.giphydemo.util.Constants.DEFAULT_HAPTIC_DURATION
+import com.example.giphydemo.util.HapticHelper
 
 class FavoritesAdapter(private val context: Context, private var data: ArrayList<FavoriteGifs>) :
     RecyclerView.Adapter<FavoritesAdapter.ViewHolder>() {
@@ -65,10 +68,12 @@ class FavoritesAdapter(private val context: Context, private var data: ArrayList
             .skipMemoryCache(false)
             .transition(DrawableTransitionOptions.withCrossFade())
             .centerInside()
-            .listener(getGlideRequestListener(position, viewHolder))
+            .timeout(Constants.API_TIME_OUT.toInt())
+            .listener(getGlideRequestListener(viewHolder.adapterPosition, viewHolder))
             .into(viewHolder.gifView)
 
         viewHolder.favIndicator.setOnClickListener {
+            HapticHelper.vibrate(context, DEFAULT_HAPTIC_DURATION)
             onFavoriteClickListener?.onFavoriteClicked(data[position])
         }
     }
@@ -127,12 +132,16 @@ class FavoritesAdapter(private val context: Context, private var data: ArrayList
         var favIndicator: ImageButton = view.findViewById(R.id.favIndicator) as ImageButton
     }
 
-    inner class FavoritesCallback(private val oldList: ArrayList<FavoriteGifs>, private val newList: ArrayList<FavoriteGifs>) : DiffUtil.Callback() {
+    inner class FavoritesCallback(
+        private val oldList: ArrayList<FavoriteGifs>,
+        private val newList: ArrayList<FavoriteGifs>
+    ) : DiffUtil.Callback() {
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             return oldList[oldItemPosition].id === newList[newItemPosition].id
         }
+
         override fun areContentsTheSame(oldCourse: Int, newPosition: Int): Boolean {
             val (_, value, name) = oldList[oldCourse]
             val (_, value1, name1) = newList[newPosition]
