@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.giphydemo.BuildConfig
+import com.example.giphydemo.model.ErrorEntity
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.model.GifResponse
 import com.example.giphydemo.model.database.entity.FavoriteGifs
@@ -27,8 +28,8 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
 
     private val repository by lazy { Repository(application) }
 
-    private val _gifsResponse = MutableLiveData<GifResponse>()
-    val gifsResponse: LiveData<GifResponse> = _gifsResponse
+    private val _gifsResponse = MutableLiveData<Pair<Boolean, GifResponse>>()
+    val gifsResponse: LiveData<Pair<Boolean, GifResponse>> = _gifsResponse
 
     private val _insertComplete = MutableLiveData<Pair<Boolean, String>>()
     val insertComplete: LiveData<Pair<Boolean, String>> = _insertComplete
@@ -39,20 +40,20 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
     private val _allFavoriteGifs = MutableLiveData<ArrayList<FavoriteGifs>>()
     val allFavoriteGifs: LiveData<ArrayList<FavoriteGifs>> = _allFavoriteGifs
 
-    val networkError = MutableLiveData<Boolean?>()
+    val networkError = MutableLiveData<ErrorEntity?>()
 
-    val dbError = MutableLiveData<Boolean?>()
+    val dbError = MutableLiveData<ErrorEntity?>()
 
     fun insertFavoriteGif(gifData: GifData) {
         viewModelScope.launch(Dispatchers.IO) {
             val dataToBeInserted =
-                FavoriteGifs(gifData.id, gifData.images.downsizedMedium?.url ?: "", gifData.title)
+                FavoriteGifs(gifData.id, gifData.images?.downsizedMedium?.url ?: "", gifData.title)
             try {
                 repository.insertGifData(dataToBeInserted).also {
                     _insertComplete.postValue(true to gifData.id)
                 }
             } catch (e: Exception) {
-                dbError.postValue(true)
+                dbError.postValue(ErrorEntity.DatabaseError(e))
             }
         }
     }
@@ -64,7 +65,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
                     _removeComplete.postValue(true to gifId)
                 }
             } catch (e: Exception) {
-                dbError.postValue(true)
+                dbError.postValue(ErrorEntity.DatabaseError(e))
             }
         }
     }
@@ -76,7 +77,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
                     _allFavoriteGifs.postValue(it as ArrayList)
                 }
             } catch (e: Exception) {
-                dbError.postValue(true)
+                dbError.postValue(ErrorEntity.DatabaseError(e))
             }
         }
     }
@@ -90,7 +91,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
                     rating = RATING
                 )
                 repository.getTrendingGifs(queryMap).apply {
-                    if (isSuccessful) {
+                    if (isSuccessFul) {
                         try {
                             val favoriteGifs = repository.retrieveAllFavorites()
                             (body() as GifResponse).data.forEach {
@@ -99,16 +100,16 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
                                 }
                             }
                         } catch (e: Exception) {
-                            dbError.postValue(true)
+                            dbError.postValue(ErrorEntity.DatabaseError(e))
                         }
-                        _gifsResponse.postValue(body())
+                        body()?.let { _gifsResponse.postValue(false to it) }
                     } else {
-                        networkError.postValue(true)
+                        networkError.postValue(this.error)
                     }
                 }
             }
         } else {
-            networkError.postValue(true)
+            networkError.postValue(ErrorEntity.CustomError(Throwable("Please turn on network")))
         }
     }
 
@@ -124,7 +125,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
                     lang = LANG
                 )
                 repository.searchGifs(queryMap).apply {
-                    if (isSuccessful) {
+                    if (isSuccessFul) {
                         try {
                             val favoriteGifs = repository.retrieveAllFavorites()
                             (body() as GifResponse).data.forEach {
@@ -133,16 +134,50 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
                                 }
                             }
                         } catch (e: Exception) {
-                            dbError.postValue(true)
+                            dbError.postValue(ErrorEntity.DatabaseError(e))
                         }
-                        _gifsResponse.postValue(body())
+                        body()?.let { _gifsResponse.postValue(true to it) }
                     } else {
-                        networkError.postValue(true)
+                        networkError.postValue(this.error)
                     }
                 }
             }
         } else {
-            networkError.postValue(true)
+            networkError.postValue(ErrorEntity.CustomError(Throwable("Please turn on network")))
+        }
+    }
+
+    fun searchGifs(query: String, offset: Int) {
+        if (context.isNetworkAvailable()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val queryMap = QueryFactory.getSearchQueryParams(
+                    apiKey = BuildConfig.API_KEY,
+                    limit = LIMIT,
+                    query = query,
+                    rating = RATING,
+                    offset = offset,
+                    lang = LANG
+                )
+                repository.searchGifs(queryMap).apply {
+                    if (isSuccessFul) {
+                        try {
+                            val favoriteGifs = repository.retrieveAllFavorites()
+                            (body() as GifResponse).data.forEach {
+                                favoriteGifs.find { favGif -> favGif.id == it.id }?.let { _ ->
+                                    it.isFavorite = true
+                                }
+                            }
+                        } catch (e: Exception) {
+                            dbError.postValue(ErrorEntity.DatabaseError(e))
+                        }
+                        body()?.let { _gifsResponse.postValue(true to it) }
+                    } else {
+                        networkError.postValue(this.error)
+                    }
+                }
+            }
+        } else {
+            networkError.postValue(ErrorEntity.CustomError(Throwable("Please turn on network")))
         }
     }
 }

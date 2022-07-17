@@ -4,16 +4,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.giphydemo.databinding.FragmentFavoritesBinding
+import com.example.giphydemo.model.ErrorEntity
 import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.ui.main.adapter.FavoritesAdapter
-import com.example.giphydemo.ui.main.common.BaseActivity
+import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
-class FavoritesFragment : Fragment(), FavoritesAdapter.OnFavoriteClickListener {
+class FavoritesFragment : BaseFragment(), FavoritesAdapter.OnFavoriteClickListener {
     private lateinit var pageViewModel: SearchTrendingViewModel
     private var _binding: FragmentFavoritesBinding? = null
 
@@ -87,17 +87,26 @@ class FavoritesFragment : Fragment(), FavoritesAdapter.OnFavoriteClickListener {
         }
 
         pageViewModel.dbError.observe(viewLifecycleOwner) {
-            if(it != null) {
+            if (it != null) {
                 hideLoader()
-                (activity as BaseActivity).showErrorToast()
+                showErrorToast((it as ErrorEntity.DatabaseError).throwable?.localizedMessage ?: "")
                 pageViewModel.dbError.value = null
             }
         }
 
         pageViewModel.networkError.observe(viewLifecycleOwner) {
-            if(it != null) {
+            if (it != null) {
                 hideLoader()
-                (activity as BaseActivity).showErrorToast()
+                when (it) {
+                    is ErrorEntity.CustomError -> showErrorToast(
+                        it.throwable?.localizedMessage ?: ""
+                    )
+                    is ErrorEntity.NetworkError -> showErrorToast(
+                        it.throwable?.localizedMessage ?: ""
+                    )
+                    is ErrorEntity.APIError -> showErrorToast(it.throwable?.localizedMessage ?: "")
+                    else -> showErrorToast()
+                }
                 pageViewModel.networkError.value = null
             }
         }

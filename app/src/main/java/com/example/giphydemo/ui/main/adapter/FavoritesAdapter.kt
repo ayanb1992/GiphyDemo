@@ -1,6 +1,5 @@
 package com.example.giphydemo.ui.main.adapter
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
@@ -123,12 +122,12 @@ class FavoritesAdapter(private val context: Context, private var data: ArrayList
         return position
     }
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var gifView: ImageView = view.findViewById<View>(R.id.gifView) as ImageView
         var favIndicator: ImageButton = view.findViewById(R.id.favIndicator) as ImageButton
     }
 
-    class FavoritesCallback(private val oldList: ArrayList<FavoriteGifs>, private val newList: ArrayList<FavoriteGifs>) : DiffUtil.Callback() {
+    inner class FavoritesCallback(private val oldList: ArrayList<FavoriteGifs>, private val newList: ArrayList<FavoriteGifs>) : DiffUtil.Callback() {
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {

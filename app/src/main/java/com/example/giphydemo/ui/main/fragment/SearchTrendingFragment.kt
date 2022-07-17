@@ -5,20 +5,20 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.giphydemo.databinding.FragmentSearchTrendingBinding
+import com.example.giphydemo.model.ErrorEntity
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.ui.main.adapter.TrendingAdapter
-import com.example.giphydemo.ui.main.common.BaseActivity
+import com.example.giphydemo.ui.main.common.BaseFragment
 import com.example.giphydemo.util.hideSoftKeyboard
 import com.example.giphydemo.viewmodel.SearchTrendingViewModel
 
 
-class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListener {
+class SearchTrendingFragment : BaseFragment(), TrendingAdapter.OnFavoriteClickListener {
 
     private lateinit var searchTrendingViewModel: SearchTrendingViewModel
     private var binding: FragmentSearchTrendingBinding? = null
@@ -36,6 +36,7 @@ class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListen
     ): View {
         binding = FragmentSearchTrendingBinding.inflate(inflater, container, false)
         val root = binding?.root
+        setupResultList()
         setupObservers()
         setupListeners()
         return (root as View)
@@ -49,28 +50,29 @@ class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListen
         binding?.loaderLayout?.root?.visibility = View.GONE
     }
 
+    private fun setupResultList() {
+        val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
+        val layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+        gifSearchResultView.layoutManager = layoutManager
+        gifSearchResultView.addItemDecoration(
+            DividerItemDecoration(
+                context,
+                layoutManager.orientation
+            )
+        )
+        adapter = TrendingAdapter(requireContext())
+        (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
+        gifSearchResultView.adapter = adapter
+    }
+
     private fun setupObservers() {
         searchTrendingViewModel.gifsResponse.observe(viewLifecycleOwner) { gifResponse ->
             hideLoader()
-            if(gifResponse.data.isNotEmpty()) {
+            if (gifResponse.second.data.isNotEmpty()) {
                 binding?.noFavFoundTv?.visibility = View.GONE
-                val gifSearchResultView: RecyclerView = binding?.gifSearchResultView!!
-                val layoutManager = LinearLayoutManager(requireContext())
-                gifSearchResultView.layoutManager = layoutManager
-                gifSearchResultView.addItemDecoration(
-                    DividerItemDecoration(
-                        context,
-                        layoutManager.orientation
-                    )
-                )
-
-                if (adapter == null) {
-                    adapter = TrendingAdapter(requireContext(), gifResponse.data)
-                    (adapter as TrendingAdapter).setOnFavoriteClickListener(this@SearchTrendingFragment)
-                    gifSearchResultView.adapter = adapter
-                } else {
-                    adapter?.setGifData(gifResponse.data)
-                }
+                adapter?.setIsForSearch(gifResponse.first)
+                adapter?.setGifData(gifResponse.second.data)
             } else {
                 binding?.noFavFoundTv?.visibility = View.VISIBLE
                 adapter?.clearGifData()
@@ -106,17 +108,22 @@ class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListen
         }
 
         searchTrendingViewModel.dbError.observe(viewLifecycleOwner) {
-            if(it != null) {
+            if (it != null) {
                 hideLoader()
-                (activity as BaseActivity).showErrorToast()
+                showErrorToast((it as ErrorEntity.DatabaseError).throwable?.localizedMessage ?: "")
                 searchTrendingViewModel.dbError.value = null
             }
         }
 
         searchTrendingViewModel.networkError.observe(viewLifecycleOwner) {
-            if(it != null) {
+            if (it != null) {
                 hideLoader()
-                (activity as BaseActivity).showErrorToast()
+                when(it) {
+                    is ErrorEntity.CustomError -> showErrorToast(it.throwable?.localizedMessage ?: "")
+                    is ErrorEntity.NetworkError -> showErrorToast(it.throwable?.localizedMessage ?: "")
+                    is ErrorEntity.APIError -> showErrorToast(it.throwable?.localizedMessage ?: "")
+                    else -> showErrorToast()
+                }
                 searchTrendingViewModel.networkError.value = null
             }
         }
@@ -137,6 +144,7 @@ class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListen
                 gifSearchEditText.hideSoftKeyboard(requireContext())
                 if (gifSearchEditText.text?.isNotEmpty() == true) {
                     gifSearchEditText.setText("")
+                    adapter?.clearGifData()
                     loadTrendingGifsList()
                 }
             }
@@ -150,10 +158,14 @@ class SearchTrendingFragment : Fragment(), TrendingAdapter.OnFavoriteClickListen
 
     override fun onResume() {
         super.onResume()
-        if (adapter != null && binding?.gifSearchEditText?.text?.toString()?.isEmpty() == true) {
+        if (adapter?.getGifData()?.isEmpty() == false
+            && binding?.gifSearchEditText?.text?.toString()?.isEmpty() == true
+        ) {
             adapter?.clearGifData()
             loadTrendingGifsList()
-        } else if (adapter != null && binding?.gifSearchEditText?.text?.toString()?.isNotEmpty() == true) {
+        } else if (adapter?.getGifData()?.isEmpty() == false
+            && binding?.gifSearchEditText?.text?.toString()?.isNotEmpty() == true
+        ) {
             searchGifs(binding?.gifSearchEditText?.text?.toString() ?: "")
         }
     }

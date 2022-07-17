@@ -20,23 +20,34 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.example.giphydemo.R
 import com.example.giphydemo.model.GifData
+import com.example.giphydemo.util.Constants
 
-class TrendingAdapter(private val context: Context, private var data: ArrayList<GifData>) :
+
+class TrendingAdapter(
+    private val context: Context,
+    private var data: ArrayList<GifData> = ArrayList()
+) :
     RecyclerView.Adapter<TrendingAdapter.ViewHolder>() {
 
     interface OnFavoriteClickListener {
         fun onFavoriteClicked(gifData: GifData)
     }
 
+    private var isForSearch: Boolean = false
     private var onFavoriteClickListener: OnFavoriteClickListener? = null
 
     fun setOnFavoriteClickListener(onFavoriteClickListener: OnFavoriteClickListener) {
         this.onFavoriteClickListener = onFavoriteClickListener
     }
 
+    fun setIsForSearch(value: Boolean) {
+        this.isForSearch = value
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     fun setGifData(data: ArrayList<GifData>) {
-        this.data = data
+        this.data.clear()
+        this.data.addAll(data)
         notifyDataSetChanged()
     }
 
@@ -59,11 +70,12 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.itemLoader.visibility = View.VISIBLE
         Glide.with(context)
-            .load(data[position].images.downsizedMedium?.url)
+            .load(data[position].images?.downsizedMedium?.url)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .skipMemoryCache(false)
             .transition(DrawableTransitionOptions.withCrossFade())
             .centerInside()
+            .timeout(Constants.API_TIME_OUT.toInt())
             .listener(getGlideRequestListener(position, viewHolder))
             .into(viewHolder.gifView)
 
@@ -123,7 +135,7 @@ class TrendingAdapter(private val context: Context, private var data: ArrayList<
         return position
     }
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var gifView: ImageView = view.findViewById<View>(R.id.gifView) as ImageView
         var favIndicator: ImageButton = view.findViewById(R.id.favIndicator) as ImageButton
         var itemLoader: ProgressBar = view.findViewById(R.id.itemLoader) as ProgressBar
