@@ -7,6 +7,8 @@ object Constants {
     const val DB_VERSION = 1
     const val DEFAULT_SEARCH_GIF_OFFSET = 25
     const val DEFAULT_HAPTIC_DURATION = 100L
+    const val API_KEY = "b7RqVS9CmSYWcWiOsNJDyecA9oOeTAyR"
+    const val DB_PASSWORD = "abcd" //This s just for test purposes
 
     object ApiQueryParams {
         const val API_KEY = "api_key"

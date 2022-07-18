@@ -5,12 +5,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.giphydemo.BuildConfig
 import com.example.giphydemo.model.ErrorEntity
 import com.example.giphydemo.model.GifData
 import com.example.giphydemo.model.GifResponse
 import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.service.Repository
+import com.example.giphydemo.util.Constants
 import com.example.giphydemo.util.isNetworkAvailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -94,7 +94,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
         if (context.isNetworkAvailable()) {
             viewModelScope.launch(Dispatchers.IO) {
                 val queryMap = QueryFactory.getTrendingGifsQuery(
-                    apiKey = BuildConfig.API_KEY,
+                    apiKey = Constants.API_KEY,
                     limit = LIMIT,
                     rating = RATING
                 )
@@ -125,7 +125,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
         if (context.isNetworkAvailable()) {
             viewModelScope.launch(Dispatchers.IO) {
                 val queryMap = QueryFactory.getSearchQueryParams(
-                    apiKey = BuildConfig.API_KEY,
+                    apiKey = Constants.API_KEY,
                     limit = LIMIT,
                     query = query,
                     rating = RATING,
@@ -159,7 +159,7 @@ class SearchTrendingViewModel(application: Application) : AndroidViewModel(appli
         if (context.isNetworkAvailable()) {
             viewModelScope.launch(Dispatchers.IO) {
                 val queryMap = QueryFactory.getSearchQueryParams(
-                    apiKey = BuildConfig.API_KEY,
+                    apiKey = Constants.API_KEY,
                     limit = LIMIT,
                     query = query,
                     rating = RATING,

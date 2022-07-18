@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.giphydemo.BuildConfig
 import com.example.giphydemo.model.database.dao.GifDao
 import com.example.giphydemo.model.database.entity.FavoriteGifs
 import com.example.giphydemo.util.Constants
@@ -23,7 +22,7 @@ abstract class GifDatabase : RoomDatabase() {
             if (dbInstance == null) {
                 synchronized(GifDatabase::class.java) {
                     val factory =
-                        SupportFactory(SQLiteDatabase.getBytes(BuildConfig.DB_PASSWORD.toCharArray()))
+                        SupportFactory(SQLiteDatabase.getBytes(Constants.DB_PASSWORD.toCharArray()))
                     dbInstance =
                         Room.databaseBuilder(context, GifDatabase::class.java, Constants.DB_NAME)
                             .openHelperFactory(factory).build()
