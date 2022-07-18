@@ -3,5 +3,5 @@ Please keep API_KEY and DB_PASSWORD in the local.properties file to enable the b
 Example:
 File -> local.properties
 Values:
-API_KEY=<Your Giphy API KEY>
-DB_PASSWORD=<Password to access the databse>
+API_KEY=`<Your Giphy API KEY>`
+DB_PASSWORD=`<Password to access the databse>`
